@@ -4,6 +4,7 @@ import {db} from "@/app/db";
 import {userTable} from "@/app/db/schema";
 import {verify} from "argon2";
 import {dbError, User} from "@/app/util/db";
+import {eq} from "drizzle-orm";
 
 export function createSession() {
     return randomBytes(32).toString("hex");
@@ -15,18 +16,33 @@ export function checkExpire(creation: number) {
 
 export async function validateSession(): Promise<[Response, boolean, User?]> {
     try {
-        const session = await cookies().then(store => store.get("session"));
+        const store = await cookies();
+        const session = store.get("session");
 
         if(!session?.value) {
             return [Response.json({error: "Session required"}, {status: 400}), false];
         }
 
-        const users: User[] = await db.select().from(userTable);
         let sessionUser: User | undefined;
-        for(const user of users) {
-            if(await verify(session.value, user.sessionKey)) {
-                sessionUser = user;
-                break;
+
+        const userId = Number(store.get("user")?.value);
+        if(Number.isSafeInteger(userId) && userId > 0) {
+            const users: User[] = await db.select()
+                .from(userTable)
+                .where(eq(userTable.id, userId))
+                .limit(1);
+            if(users.length > 0 && await verify(session.value, users[0].sessionKey)) {
+                sessionUser = users[0];
+            }
+        }
+
+        if(!sessionUser) {
+            const users: User[] = await db.select().from(userTable);
+            for(const user of users) {
+                if(await verify(session.value, user.sessionKey)) {
+                    sessionUser = user;
+                    break;
+                }
             }
         }
 

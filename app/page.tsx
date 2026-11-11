@@ -1,4 +1,8 @@
-'use client'
+import type {Metadata} from "next";
+
+export const metadata: Metadata = {
+  title: "Wrold home",
+};
 
 export default function Home() {
   return (

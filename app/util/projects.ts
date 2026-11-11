@@ -41,12 +41,14 @@ export async function getProject(id: number, user: number, permissionsNeeded: Ro
     if(projectSearch.length === 0) {
         return PROJECT_NOT_FOUND;
     }
-    if(ROLES.indexOf(roleIn(user, projectSearch[0])) >= ROLES.indexOf(permissionsNeeded)) {
+    const role = roleIn(user, projectSearch[0]);
+    if(ROLES.indexOf(role) >= ROLES.indexOf(permissionsNeeded == Role.NONE ? (projectSearch[0].isPublic ? Role.NONE : Role.CONTRIBUTOR) : permissionsNeeded)) {
         return NO_PERMISSIONS;
     }
 
     return projectSearch[0];
 }
 
+export const INVALID_PROJECT = Response.json({error: "Invalid project request"}, {status: HttpStatusCode.BAD_REQUEST});
 export const PROJECT_NOT_FOUND = Response.json({error: "No project found."}, {status: HttpStatusCode.NOT_FOUND});
 export const NO_PERMISSIONS = Response.json({error: "You do not have permission to manage this project"}, {status: HttpStatusCode.FORBIDDEN})

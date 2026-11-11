@@ -16,9 +16,9 @@ export async function GET() {
         }
 
         const octokit = await github.getInstallationOctokit(Number(userData!.githubAppId));
-        const repos = await octokit.rest.repos.listForAuthenticatedUser().then(req => req.data);
+        const repos = await octokit.rest.apps.listReposAccessibleToInstallation().then(req => req.data);
 
-        return Response.json({repos: repos.map(repo => repo.full_name)}, {status: HttpStatusCode.OK})
+        return Response.json({repos: repos.repositories.map(repo => repo.full_name)}, {status: HttpStatusCode.OK})
     } catch (e) {
         return dbError(e);
     }

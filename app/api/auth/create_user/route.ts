@@ -6,6 +6,7 @@ import {hash} from "argon2";
 import {eq, or} from "drizzle-orm";
 import {createSession} from "@/app/util/session";
 import HttpStatusCode from "@/app/util/status-code";
+import {GITHUB_APP_REDIRECT} from "@/app/util/misc";
 
 export async function POST(req: Request) {
     try {
@@ -41,22 +42,27 @@ export async function POST(req: Request) {
 
         const session = createSession();
 
-        await db.insert(userTable).values({
+        const [createdUser] = await db.insert(userTable).values({
             pseudo: username,
             password: await hash(password),
             ip: ip,
             sessionKey: session,
             sessionKeyCreation: Date.now(),
             accountCreation: Date.now()
-        });
+        }).returning({id: userTable.id});
 
         const store = await cookies();
         store.set("session", await hash(session), {
             httpOnly: true,
             maxAge: 60 * 60 * 24 * 30
         });
+        store.set("user", String(createdUser.id), {
+            httpOnly: true,
+            maxAge: 60 * 60 * 24 * 30,
+            path: "/"
+        });
 
-        return Response.redirect("https://github.com/apps/spaceship-translate/installations/new/", HttpStatusCode.CREATED);
+        return Response.redirect(GITHUB_APP_REDIRECT, HttpStatusCode.FOUND);
     } catch(e) {
         return dbError(e);
     }

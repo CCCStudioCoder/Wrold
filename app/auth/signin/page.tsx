@@ -15,6 +15,10 @@ export default function Signing({ searchParams }: AwaitingRedirect) {
         searchParams.then(res => setParams(res));
     }, [searchParams]);
 
+    useEffect(() => {
+        document.title = "Create an Wrold account";
+    });
+
     const redirect = url ?? "/";
 
     const [statusInfo, setStatusInfo] = useState(error ?? "");

@@ -1,8 +1,9 @@
 'use client'
 
-import {useRef, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import {useRouter} from "next/navigation";
 import {useAPI} from "@/app/util/client";
+import {GITHUB_APP_REDIRECT} from "@/app/util/misc";
 
 export default function Settings() {
     const userRef = useRef<HTMLInputElement>(null);
@@ -15,7 +16,11 @@ export default function Settings() {
     const [statusInfo, setStatusInfo] = useState("");
     const [deletePopup, setDeletePopup] = useState(false);
 
-    const [UserProvider, _] = useAPI("/settings");
+    const [UserProvider, user] = useAPI("/settings");
+
+    useEffect(() => {
+        if(user) document.title = user.pseudo + "'s settings";
+    }, [user]);
 
     return (
         <div>
@@ -35,7 +40,7 @@ export default function Settings() {
             </fieldset>
             <p>{statusInfo}</p>
             <fieldset>
-                <a href="https://github.com/apps/spaceship-translate/installations/new/">Connect to GitHub app</a>
+                <a href={GITHUB_APP_REDIRECT}>Connect to GitHub app</a>
                 <button onClick={updateSettings}>Save</button>
                 <button onClick={router.refresh}>Abort</button>
             </fieldset>

@@ -28,6 +28,15 @@ export async function DELETE(req: Request) {
             httpOnly: true,
             maxAge: 60 * 60 * 24 * 30
         });
+        if(recreate) {
+            store.set("user", String(userData!.id), {
+                httpOnly: true,
+                maxAge: 60 * 60 * 24 * 30,
+                path: "/"
+            });
+        } else {
+            store.delete("user");
+        }
 
         return SUCCESSFUL;
     } catch (e) {

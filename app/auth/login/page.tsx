@@ -26,6 +26,10 @@ export default function Login({searchParams}: AwaitingRedirect) {
         searchParams.then(res => setParams(res));
     }, [searchParams]);
 
+    useEffect(() => {
+        document.title = "Login to Wrold";
+    });
+
     return (
         <main>
             <h1>Creating an OverTranslated account</h1>

@@ -7,7 +7,7 @@ import {dbError, SUCCESSFUL} from "@/app/util/db";
 import {verify} from "argon2";
 import {
     getProject,
-    hasPermissions,
+    hasPermissions, INVALID_PROJECT,
     NO_PERMISSIONS,
     PROJECT_NOT_FOUND,
     Role,
@@ -15,8 +15,6 @@ import {
     roleIn
 } from "@/app/util/projects";
 import github, {createBranchIfNotExists} from "@/app/util/github";
-
-const INVALID_PROJECT = Response.json({error: "Invalid project request"}, {status: HttpStatusCode.BAD_REQUEST});
 
 export async function POST(req: Request) {
     try {

@@ -41,6 +41,11 @@ export async function POST(req: Request) {
             httpOnly: true,
             maxAge: 60 * 60 * 24 * 30
         });
+        store.set("user", String(userSearch[0].id), {
+            httpOnly: true,
+            maxAge: 60 * 60 * 24 * 30,
+            path: "/"
+        });
 
         return Response.json({...userSearch[0]}, {status: HttpStatusCode.OK});
     } catch (e) {

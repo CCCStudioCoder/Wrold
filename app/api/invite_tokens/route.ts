@@ -33,7 +33,7 @@ export async function POST(req: Request) {
         const project = await db.update(projectTable).set({
                 [tokenSearch[0].admin ? "admins" : "contributors"]: sql`array_append(${projectTable}, ${userData!.id})`
             }).where(eq(projectTable.id, tokenSearch[0].linksTo))
-            .returning({name: projectTable.name});
+            .returning({id: projectTable.id});
 
         if(project.length == 0) return PROJECT_NOT_FOUND;
 
@@ -47,7 +47,7 @@ export async function POST(req: Request) {
             projects: sql`array_append(${userTable}, ${tokenSearch[0].linksTo})`
         }).where(eq(userTable.id, userData!.id));
 
-        return Response.json({project: project[0].name});
+        return Response.json({project: project[0].id});
     } catch(e) {
         return dbError(e);
     }

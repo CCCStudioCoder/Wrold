@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project version="4">
-  <component name="SqlDialectMappings">
-    <file url="file://$PROJECT_DIR$/app/api/github/content/route.ts" dialect="GenericSQL" />
-    <file url="file://$PROJECT_DIR$/app/api/invite_tokens/route.ts" dialect="GenericSQL" />
-    <file url="file://$PROJECT_DIR$/drizzle/20261028133111_majestic_magneto/migration.sql" dialect="PostgreSQL" />
-  </component>
-</project>

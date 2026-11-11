@@ -1,0 +1,1 @@
+export const GITHUB_APP_REDIRECT = "https://github.com/apps/wrold-translate/installations/new/";

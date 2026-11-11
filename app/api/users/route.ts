@@ -1,14 +1,40 @@
 import {validateSession} from "@/app/util/session";
 import {dbError} from "@/app/util/db";
 import {db} from "@/app/db";
-import {userTable} from "@/app/db/schema";
+import {projectTable, userTable} from "@/app/db/schema";
 import HttpStatusCode from "@/app/util/status-code";
-import {eq, sql} from "drizzle-orm";
+import {and, eq, inArray, sql} from "drizzle-orm";
 import {hash, verify} from "argon2";
 import {cookies} from "next/headers";
+import {NextRequest} from "next/server";
 
-export async function GET() {
-    return (await validateSession())[0];
+export async function GET(req: NextRequest) {
+    const id = req.nextUrl.searchParams.get("id");
+
+    if(!id) return await validateSession().then(s => s[0]);
+    else {
+        const userSearch = await db.select()
+            .from(userTable)
+            .where(eq(userTable.id, Number(id)))
+            .limit(1);
+        if(userSearch.length === 0) {
+            return Response.json({error: "No such user found"}, {status: HttpStatusCode.NOT_FOUND});
+        }
+
+        const projects = await db.select()
+            .from(projectTable)
+            .where(and(
+                inArray(projectTable.id, userSearch[0].projects),
+                eq(projectTable.isPublic, true)
+            ));
+
+        return Response.json({
+            info: "User not authenticated, giving only base information.",
+            pseudo: userSearch[0].pseudo,
+            githubAccount: userSearch[0].githubAccount,
+            projects: projects
+        }, {status: HttpStatusCode.OK})
+    }
 }
 
 export async function PATCH(req: Request) {
@@ -83,6 +109,7 @@ export async function DELETE(req: Request) {
 
                 const store = await cookies();
                 store.delete("session");
+                store.delete("user");
 
                 return Response.json({}, {status: HttpStatusCode.OK})
             }

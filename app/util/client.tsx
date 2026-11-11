@@ -1,9 +1,18 @@
 'use client'
 
 import {ReactNode, useEffect, useMemo, useReducer, useState} from "react";
-import {DimensionProps, Loading} from "@/app/util/components";
+import {
+    DEFAULT_TOOLBOX,
+    DimensionProps,
+    EditorToolbox,
+    Loading,
+    ToolboxModifier,
+    ToolboxProvider
+} from "@/app/util/components";
 import {useRouter} from "next/navigation";
-import {User} from "@/app/util/db";
+import {Project, User} from "@/app/util/db";
+import Link from "next/link";
+import {Editor} from "@/app/util/editor";
 
 const DEFAULT_REQUEST_INIT: RequestInit = {method: "GET"};
 
@@ -19,7 +28,7 @@ export type APIProvider<T> = (params: Props<T> & DimensionProps) => ReactNode;
  */
 export function useAPI<T = User>(
     redirect: string = "/",
-    api: string = "user_data",
+    api: string = "users",
     init: RequestInit = DEFAULT_REQUEST_INIT,
     process: (res: any) => T = res => res
 ): [APIProvider<T>, T|null, () => void] {
@@ -32,7 +41,8 @@ export function useAPI<T = User>(
         fetch("/api/" + api, { ...init, signal: abortController.signal })
             .then(response => response.json())
             .then(json => setContent(json));
-        return () => abortController.abort("Unknown reason");
+
+        return () => abortController.abort("Aborted api fetch");
     }, [event, api, init]);
 
     const Error = () => {
@@ -56,4 +66,63 @@ export function useAPI<T = User>(
     const result: T|null = useMemo(() => content && process(content), [content, process]);
 
     return [Provider, result, refresh];
+}
+
+type EditorCapsuleProps = {
+    path?: string[];
+    project: Project;
+    id: string;
+    locale: string;
+    source: string;
+    target: string;
+    readonly: boolean;
+};
+
+export function EditorCapsule(
+    { path, project, id, locale, target, source, readonly }: EditorCapsuleProps
+) {
+    const [toolbox, setToolbox] = useState(() => DEFAULT_TOOLBOX());
+
+    const ContentList = () => {
+        if(!path) {
+            const isSrc = project.defaultLanguage === locale;
+            return project.translationNames.map((tr, i) => (
+                <Link href={`/projects/${id}/${locale}/${
+                    isSrc ? project.translationSources[i] : project.translationTargets[i]
+                }`}>{tr}</Link>
+            ));
+        }
+        if(Array.isArray(source)) {
+            return (<ul>{source.map((item, i) => (
+                <Link key={i} href={`/projects/${id}/${locale}/${(path ?? []).join("/")}/${item}`}>{item}</Link>
+            ))}</ul>);
+        }
+
+        return readonly
+            ? <p>Your are not allowed to view and edit this project.</p>
+            : (
+                <ToolboxModifier value={buttons => setToolbox(DEFAULT_TOOLBOX(buttons))}>
+                    <Editor content={target || source} src={source} project={project} path={[locale, ...path!]} />
+                </ToolboxModifier>
+            );
+    }
+
+    return (
+        <main>
+            <div>
+                <Link href={`/projects/${id}/`}>${id}</Link>
+                /
+                <Link href={`/projects/${id}/${locale}/`}>${locale}</Link>
+                /
+                {(path ?? []).map((item, i, array) => (
+                    <Link href={`/projects/${id}/${locale}/${array.slice(0, i).join("/")}`}>${item}</Link>
+                )).join("/")}
+                <ToolboxProvider value={toolbox}>
+                    <EditorToolbox project={project} path={path} />
+                </ToolboxProvider>
+            </div>
+
+            <ContentList />
+        </main>
+    );
 }

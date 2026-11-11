@@ -5,14 +5,15 @@ import {projectTable, userTable} from "@/app/db/schema";
 import {eq, sql} from "drizzle-orm";
 import github, {createBranchIfNotExists, resourceJSON} from "@/app/util/github";
 import {validateSession} from "@/app/util/session";
-import {getProject, PROJECT_NOT_FOUND, Role, roleIn} from "@/app/util/projects";
+import {getProject, INVALID_PROJECT, PROJECT_NOT_FOUND, Role, roleIn} from "@/app/util/projects";
+import {NextRequest} from "next/server";
 
-export async function GET(req: Request) {
+export async function POST(req: NextRequest) {
     try {
         const { project, path, locale } = await req.json();
 
         if(typeof project !== "number" || typeof path !== "string") {
-            return Response.json({error: "Invalid project or path"}, {status: HttpStatusCode.BAD_REQUEST});
+            return INVALID_PROJECT;
         }
 
         const projectSearch = await db.select()
@@ -114,7 +115,7 @@ export async function PUT(req: Request) {
 
 export async function PATCH(req: Request) {
     try {
-        const { id, translation, path, message, content } = await req.json();
+        const { id, translation, locale, path: target, message, content } = await req.json();
 
         const [error, sessionValid, userData] = await validateSession();
         if(!sessionValid) {
@@ -145,6 +146,11 @@ export async function PATCH(req: Request) {
 
         const octokit = await github.getInstallationOctokit(appId!);
         await createBranchIfNotExists(owner, repo, branch, octokit);
+
+        const basePath = locale === project.defaultLanguage
+            ? project.translationSources[translationPos]
+            : project.translationTargets[translationPos];
+        const path = `${basePath}/${locale}/${target}`;
 
         try {
             await octokit.rest.repos.createOrUpdateFileContents({
